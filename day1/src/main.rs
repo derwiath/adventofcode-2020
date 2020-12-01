@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 
-fn find_terms(terms: &[i32], sum: i32) -> Option<(i32, i32)> {
+fn find_terms2(terms: &[i32], sum: i32) -> Option<(i32, i32)> {
     terms.iter().enumerate().find_map(|(i1, t1)| {
         let needle: i32 = sum - t1;
         if let Some(i2) = terms.iter().skip(i1).position(|t2| *t2 == needle) {
@@ -10,6 +10,18 @@ fn find_terms(terms: &[i32], sum: i32) -> Option<(i32, i32)> {
             None
         }
     })
+}
+
+fn solve_part1(terms: &[i32], sum: i32) {
+    match find_terms2(&terms[..], sum) {
+        Some((t1, t2)) => {
+            println!("{} + {} = {}", t1, t2, t1 + t2);
+            println!("{} * {} = {}", t1, t2, t1 * t2);
+        }
+        None => {
+            println!("Failed to find terms that add up to {}", sum);
+        }
+    }
 }
 
 fn main() {
@@ -23,15 +35,7 @@ fn main() {
         .lines()
         .map(|s| s.parse::<i32>().expect("Failed to parse i32"))
         .collect();
-    match find_terms(&terms[..], 2020) {
-        Some((t1, t2)) => {
-            println!("{} + {} = {}", t1, t2, t1 + t2);
-            println!("{} * {} = {}", t1, t2, t1 * t2);
-        }
-        None => {
-            println!("Failed to find terms that add up to 2020");
-        }
-    }
+    solve_part1(&terms[..], 2020);
 }
 
 #[cfg(test)]
@@ -41,7 +45,7 @@ mod tests {
     const EXAMPLE_TERMS: [i32; 6] = [1721, 979, 366, 299, 675, 1456];
 
     #[test]
-    fn test_example() {
-        assert_eq!(find_terms(&EXAMPLE_TERMS, 2020), Some((1721, 299)));
+    fn test_example_two_terms() {
+        assert_eq!(find_terms2(&EXAMPLE_TERMS, 2020), Some((1721, 299)));
     }
 }
