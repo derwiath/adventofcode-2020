@@ -12,7 +12,7 @@ impl Pos {
     }
 }
 
-fn count_trees(map: &str, slope: &Pos) -> u32 {
+fn count_trees(map: &str, slope: &Pos) -> usize {
     let width = map
         .lines()
         .find(|l| {
@@ -27,29 +27,18 @@ fn count_trees(map: &str, slope: &Pos) -> u32 {
         .filter(|c| *c == '.' || *c == '#')
         .count();
 
+    let clean_map: Vec<char> = map.chars().filter(|c| c == &'.' || c == &'#').collect();
+    let map_len = clean_map.len();
     let stride = slope.x + width * slope.y;
-    let mut pos = 0;
-    let mut trees = 0;
-    let clean_map = map.chars().filter(|c| c == &'.' || c == &'#');
-    let map_len = clean_map.clone().count();
-    let is_tree = |pos| {
-        if let Some(c) = clean_map.clone().nth(pos) {
-            c == '#'
-        } else {
-            false
-        }
-    };
-    while pos < map_len {
-        pos += stride;
-        if pos < map_len {
-            trees += if is_tree(pos) { 1 } else { 0 };
-        } else {
-            pos -= width;
-            trees += if is_tree(pos) { 1 } else { 0 };
-            break;
-        };
+    let steps = map_len / stride;
+    let mut positions: Vec<usize> = (0..map_len).step_by(stride).collect();
+    if steps * stride < map_len - width {
+        positions.push((steps + 1) * stride - width);
     }
-    trees
+    positions
+        .iter()
+        .filter(|pos| clean_map.get(**pos).unwrap() == &'#')
+        .count()
 }
 
 fn main() {
@@ -62,7 +51,7 @@ fn main() {
     let slope = Pos::new(3, 1);
     println!("Trees {}", count_trees(&input, &slope));
 
-    let mut product: u32 = 1;
+    let mut product: usize = 1;
     for slope in [
         Pos::new(1, 1),
         Pos::new(3, 1),
