@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
-
 use std::env;
 use std::fs;
 
@@ -17,10 +13,6 @@ impl Pos {
 }
 
 fn count_trees(map: &str, slope: &Pos) -> u32 {
-    lazy_static! {
-        static ref MAP_RE: regex::Regex = regex::Regex::new(r"\([\.#]*^\)").unwrap();
-    }
-
     let rows: Vec<&str> = map
         .lines()
         .filter(|r| r.len() > 0)
