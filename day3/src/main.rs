@@ -101,26 +101,27 @@ mod tests3 {
 .#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#  --->
 ";
     #[test]
-    fn test_example() {
-        let slope = Pos::new(3, 1);
-        assert_eq!(count_trees(EXAMPLE, &slope), 7);
+    fn test_example1_1() {
+        assert_eq!(count_trees(EXAMPLE, &Pos::new(1, 1)), 2);
     }
 
     #[test]
-    fn test_example2() {
-        let mut product: u32 = 1;
-        for slope in [
-            Pos::new(1, 1),
-            Pos::new(3, 1),
-            Pos::new(5, 1),
-            Pos::new(7, 1),
-            Pos::new(1, 2),
-        ]
-        .iter()
-        {
-            let trees = count_trees(EXAMPLE, &slope);
-            product *= trees;
-        }
-        assert_eq!(product, 336);
+    fn test_example3_1() {
+        assert_eq!(count_trees(EXAMPLE, &Pos::new(3, 1)), 7);
+    }
+
+    #[test]
+    fn test_example5_1() {
+        assert_eq!(count_trees(EXAMPLE, &Pos::new(5, 1)), 3);
+    }
+
+    #[test]
+    fn test_example7_1() {
+        assert_eq!(count_trees(EXAMPLE, &Pos::new(7, 1)), 4);
+    }
+
+    #[test]
+    fn test_example1_2() {
+        assert_eq!(count_trees(EXAMPLE, &Pos::new(1, 2)), 2);
     }
 }
