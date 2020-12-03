@@ -106,8 +106,8 @@ mod tests3 {
         assert_eq!(count_trees(EXAMPLE, &slope), 7);
     }
 
+    #[test]
     fn test_example2() {
-        let slope = Pos::new(3, 1);
         let mut product: u32 = 1;
         for slope in [
             Pos::new(1, 1),
