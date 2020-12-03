@@ -13,37 +13,41 @@ impl Pos {
 }
 
 fn count_trees(map: &str, slope: &Pos) -> u32 {
-    let rows: Vec<&str> = map
+    let width = map
         .lines()
-        .filter(|r| r.len() > 0)
-        .map(|r| {
-            if r.ends_with("  --->") {
-                &r[0..r.len() - "  --->".len()]
-            } else {
-                &r[..]
-            }
-        })
-        .collect();
-    let mut trees = 0;
-    let mut pos = Pos::new(0, 0);
-    let width = rows.first().unwrap().len();
-    while pos.y < rows.len() {
-        pos.x = (pos.x + slope.x) % width;
-        pos.y += slope.y;
-        let tree = if let Some(row) = rows.get(pos.y) {
-            if let Some(c) = row.chars().nth(pos.x) {
-                c == '#'
+        .find(|l| {
+            if let Some(c) = l.chars().nth(0) {
+                c == '.' || c == '#'
             } else {
                 false
             }
+        })
+        .unwrap()
+        .chars()
+        .filter(|c| *c == '.' || *c == '#')
+        .count();
+
+    let stride = slope.x + width * slope.y;
+    let mut pos = 0;
+    let mut trees = 0;
+    let clean_map = map.chars().filter(|c| c == &'.' || c == &'#');
+    let map_len = clean_map.clone().count();
+    let is_tree = |pos| {
+        if let Some(c) = clean_map.clone().nth(pos) {
+            c == '#'
         } else {
             false
-        };
-        if tree {
-            trees += 1;
         }
-
-        //println!("{} {}: tree {}, count {}", pos.x, pos.y, tree, trees);
+    };
+    while pos < map_len {
+        pos += stride;
+        if pos < map_len {
+            trees += if is_tree(pos) { 1 } else { 0 };
+        } else {
+            pos -= width;
+            trees += if is_tree(pos) { 1 } else { 0 };
+            break;
+        };
     }
     trees
 }
