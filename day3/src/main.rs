@@ -51,7 +51,7 @@ fn count_trees(map: &str, slope: &Pos) -> u32 {
             trees += 1;
         }
 
-        println!("{} {}: tree {}, count {}", pos.x, pos.y, tree, trees);
+        //println!("{} {}: tree {}, count {}", pos.x, pos.y, tree, trees);
     }
     trees
 }
@@ -65,6 +65,22 @@ fn main() {
 
     let slope = Pos::new(3, 1);
     println!("Trees {}", count_trees(&input, &slope));
+
+    let mut product: u32 = 1;
+    for slope in [
+        Pos::new(1, 1),
+        Pos::new(3, 1),
+        Pos::new(5, 1),
+        Pos::new(7, 1),
+        Pos::new(1, 2),
+    ]
+    .iter()
+    {
+        let trees = count_trees(&input, &slope);
+        product *= trees;
+        println!("Trees {}", trees);
+    }
+    println!("Product {}", product);
 }
 
 #[cfg(test)]
@@ -88,5 +104,23 @@ mod tests3 {
     fn test_example() {
         let slope = Pos::new(3, 1);
         assert_eq!(count_trees(EXAMPLE, &slope), 7);
+    }
+
+    fn test_example2() {
+        let slope = Pos::new(3, 1);
+        let mut product: u32 = 1;
+        for slope in [
+            Pos::new(1, 1),
+            Pos::new(3, 1),
+            Pos::new(5, 1),
+            Pos::new(7, 1),
+            Pos::new(1, 2),
+        ]
+        .iter()
+        {
+            let trees = count_trees(EXAMPLE, &slope);
+            product *= trees;
+        }
+        assert_eq!(product, 336);
     }
 }
