@@ -2,15 +2,12 @@
 //extern crate lazy_static;
 extern crate regex;
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
 
 fn solve_part1(input: &str) -> usize {
-    /*
-    lazy_static! {
-        static ref ANSWER_RE: regex::Regex = regex::Regex::new(r"([a-z]*)").unwrap();
-    }*/
     let mut set = HashSet::<char>::new();
     let mut sum: usize = 0;
     for line in input.lines() {
@@ -28,7 +25,28 @@ fn solve_part1(input: &str) -> usize {
 }
 
 fn solve_part2(input: &str) -> usize {
-    input.len()
+    let mut map = HashMap::<char, usize>::new();
+    let mut sum: usize = 0;
+    let mut group_size = 0;
+    for line in input.lines() {
+        if line.len() > 0 {
+            group_size += 1;
+            for c in line.chars() {
+                if c >= 'a' && c <= 'z' {
+                    if let Some(count) = map.get_mut(&c) {
+                        *count += 1;
+                    } else {
+                        map.insert(c, 1);
+                    }
+                }
+            }
+        } else {
+            sum += map.iter().filter(|(_, v)| *v >= &group_size).count();
+            map.clear();
+            group_size = 0;
+        }
+    }
+    sum + map.iter().filter(|(_, v)| *v >= &group_size).count()
 }
 
 fn main() {
@@ -78,5 +96,26 @@ a
 
 b";
         assert_eq!(solve_part1(input), 11);
+    }
+
+    #[test]
+    fn test_3() {
+        let input = r"
+abc
+
+a
+b
+c
+
+ab
+ac
+
+a
+a
+a
+a
+
+b";
+        assert_eq!(solve_part2(input), 6);
     }
 }
