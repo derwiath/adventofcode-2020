@@ -1,12 +1,30 @@
-#[macro_use]
-extern crate lazy_static;
+//#[macro_use]
+//extern crate lazy_static;
 extern crate regex;
 
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 
 fn solve_part1(input: &str) -> usize {
-    input.len()
+    /*
+    lazy_static! {
+        static ref ANSWER_RE: regex::Regex = regex::Regex::new(r"([a-z]*)").unwrap();
+    }*/
+    let mut set = HashSet::<char>::new();
+    let mut sum: usize = 0;
+    for line in input.lines() {
+        for c in line.chars() {
+            if c >= 'a' && c <= 'z' {
+                set.insert(c);
+            }
+        }
+        if line.len() == 0 {
+            sum += set.len();
+            set.clear();
+        }
+    }
+    sum + set.len()
 }
 
 fn solve_part2(input: &str) -> usize {
@@ -33,6 +51,32 @@ mod tests6 {
 
     #[test]
     fn test_1() {
-        assert_eq!(1, 1);
+        assert_eq!(solve_part1("abc"), 3);
+        assert_eq!(solve_part1("a\na\na\n"), 1);
+        assert_eq!(solve_part1("a\nb\nc\n"), 3);
+        assert_eq!(solve_part1("ab\nac"), 3);
+        assert_eq!(solve_part1("a\na\na\na\n"), 1);
+        assert_eq!(solve_part1("b"), 1);
+    }
+
+    #[test]
+    fn test_2() {
+        let input = r"
+abc
+
+a
+b
+c
+
+ab
+ac
+
+a
+a
+a
+a
+
+b";
+        assert_eq!(solve_part1(input), 11);
     }
 }
