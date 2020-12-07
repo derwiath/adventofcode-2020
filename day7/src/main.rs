@@ -7,20 +7,46 @@ use std::collections::HashSet;
 use std::env;
 use std::fs;
 
-fn parse_bag(s: &str) -> Option<String> {
+#[allow(dead_code)]
+#[derive(Debug)]
+struct Bag {
+    color: String,
+    count: usize,
+}
+
+impl Bag {
+    fn new(variant: &str, color: &str, count: usize) -> Bag {
+        Bag {
+            color: format!("{} {}", variant, color),
+            count,
+        }
+    }
+}
+
+fn parse_bag(s: &str) -> Option<Bag> {
     lazy_static! {
-        static ref BAG_RE: regex::Regex =
-            //regex::Regex::new(r"[0-9] ([a-z]*) ([a-z]*) bag[s\.]*").unwrap();
-            regex::Regex::new(r"([a-z]*) ([a-z]*) bag").unwrap();
+        static ref BAG_WITH_COUNT_RE: regex::Regex =
+            regex::Regex::new(r"([0-9]+) ([a-z]*) ([a-z]*) bag").unwrap();
+        static ref BAG_RE: regex::Regex = regex::Regex::new(r"([a-z]*) ([a-z]*) bag").unwrap();
+    }
+
+    match BAG_WITH_COUNT_RE.captures(s) {
+        Some(captures) => {
+            let count = captures.get(1).unwrap().as_str().parse::<usize>().unwrap();
+            let variant = captures.get(2).unwrap().as_str();
+            let color = captures.get(3).unwrap().as_str();
+            return Some(Bag::new(variant, color, count));
+        }
+        None => (),
     }
 
     match BAG_RE.captures(s) {
         Some(captures) => {
-            let shade = captures.get(1).unwrap().as_str();
+            let variant = captures.get(1).unwrap().as_str();
             let color = captures.get(2).unwrap().as_str();
-            Some(format!("{} {}", shade, color))
+            Some(Bag::new(variant, color, 1))
         }
-        None => return None,
+        None => None,
     }
 }
 fn create_parent_bags_map(rules: &str) -> HashMap<String, Vec<String>> {
@@ -35,12 +61,12 @@ fn create_parent_bags_map(rules: &str) -> HashMap<String, Vec<String>> {
         let contents = parts.get(1).unwrap();
         for content in contents.split(", ") {
             let content_bag = parse_bag(content).unwrap();
-            if let Some(parents) = parent_bags.get_mut(&content_bag) {
-                parents.push(container_bag.clone());
+            if let Some(parents) = parent_bags.get_mut(&content_bag.color) {
+                parents.push(container_bag.color.clone());
             } else {
                 let mut parents = Vec::<String>::new();
-                parents.push(container_bag.clone());
-                parent_bags.insert(content_bag, parents);
+                parents.push(container_bag.color.clone());
+                parent_bags.insert(content_bag.color.clone(), parents);
             }
         }
     }
