@@ -23,8 +23,7 @@ fn parse_bag(s: &str) -> Option<String> {
         None => return None,
     }
 }
-
-fn solve_part1(rules: &str, bag: &str) -> usize {
+fn create_parent_bags_map(rules: &str) -> HashMap<String, Vec<String>> {
     let mut parent_bags = HashMap::<String, Vec<String>>::new();
     for rule in rules.lines() {
         if rule.len() == 0 {
@@ -45,6 +44,11 @@ fn solve_part1(rules: &str, bag: &str) -> usize {
             }
         }
     }
+    parent_bags
+}
+
+fn solve_part1(rules: &str, bag: &str) -> usize {
+    let parent_bags = create_parent_bags_map(rules);
 
     for (bag, parents) in parent_bags.iter() {
         println!("{} -> {:?}", bag, parents);
