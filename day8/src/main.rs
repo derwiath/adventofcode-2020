@@ -39,6 +39,12 @@ impl Instruction {
     }
 }
 
+#[derive(Debug)]
+enum ExitError {
+    InfiniteLoop(i64, usize),
+    InvalidPC(isize, usize),
+}
+
 fn parse_program(input: &str) -> Result<Vec<Instruction>, usize> {
     input
         .lines()
@@ -55,7 +61,7 @@ fn parse_program(input: &str) -> Result<Vec<Instruction>, usize> {
         .collect()
 }
 
-fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
+fn execute_program(program: &Vec<Instruction>) -> Result<i64, ExitError> {
     let mut visited: Vec<bool> = Vec::with_capacity(program.len());
     for _ in 0..program.len() {
         visited.push(false);
@@ -63,16 +69,13 @@ fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
     let mut accumulator: i64 = 0;
     let mut pos: isize = 0;
     loop {
-        if pos < 0 {
-            break;
-        }
         let upos = pos as usize;
 
         match visited.get(upos) {
             None => break,
             Some(visited) => {
                 if *visited {
-                    break;
+                    return Err(ExitError::InfiniteLoop(accumulator, upos));
                 }
             }
         }
@@ -92,9 +95,20 @@ fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
                 }
             }
         }
+        if pos < 0 {
+            return Err(ExitError::InvalidPC(pos, upos));
+        }
     }
 
-    Some(accumulator)
+    Ok(accumulator)
+}
+
+fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
+    match execute_program(program) {
+        Ok(accumulator) => Some(accumulator),
+        Err(ExitError::InvalidPC(_, _)) => None,
+        Err(ExitError::InfiniteLoop(accumulator, _)) => Some(accumulator),
+    }
 }
 
 fn solve_part2(program: &Vec<Instruction>) -> usize {
