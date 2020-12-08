@@ -10,5 +10,6 @@ members = [
     "day7",
     "day8",
     "gameboy",
+    "day9",
     "dayx",
 ]
