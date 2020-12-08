@@ -20,8 +20,6 @@ impl Instruction {
                 regex::Regex::new(r"([a-z]+) ([+-]\d*)").unwrap();
         }
 
-        println!("line: {}", s);
-
         if let Some(captures) = INSTRUCTION_RE.captures(s) {
             if captures.len() != 3 {
                 return None;
@@ -41,15 +39,25 @@ impl Instruction {
     }
 }
 
-fn solve_part1(input: &str) -> Option<i64> {
-    let instructions: Vec<Instruction> = input
+fn parse_program(input: &str) -> Result<Vec<Instruction>, usize> {
+    input
         .lines()
-        .map(|line| Instruction::parse(line))
-        .filter(|i| i.is_some())
-        .map(|i| i.unwrap())
-        .collect();
-    let mut visited: Vec<bool> = Vec::with_capacity(instructions.len());
-    for _ in instructions.iter() {
+        .enumerate()
+        .filter(|(_, line)| line.len() > 0)
+        .map(|(line_index, line)| {
+            println!("{}: {}", line_index + 1, line);
+            if let Some(instruction) = Instruction::parse(line) {
+                Ok(instruction)
+            } else {
+                Err(line_index)
+            }
+        })
+        .collect()
+}
+
+fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
+    let mut visited: Vec<bool> = Vec::with_capacity(program.len());
+    for _ in 0..program.len() {
         visited.push(false);
     }
     let mut accumulator: i64 = 0;
@@ -69,8 +77,8 @@ fn solve_part1(input: &str) -> Option<i64> {
             }
         }
         visited[upos] = true;
-        println!("{:?}", instructions[upos]);
-        if let Some(instruction) = instructions.get(upos) {
+        println!("{:?} [{}]", program[upos], upos);
+        if let Some(instruction) = program.get(upos) {
             match instruction {
                 Instruction::Nop(_) => {
                     pos += 1;
@@ -89,8 +97,8 @@ fn solve_part1(input: &str) -> Option<i64> {
     Some(accumulator)
 }
 
-fn solve_part2(input: &str) -> usize {
-    input.len()
+fn solve_part2(program: &Vec<Instruction>) -> usize {
+    program.len()
 }
 
 fn main() {
@@ -100,10 +108,22 @@ fn main() {
     println!("Reading input from {}", filename);
     let input = fs::read_to_string(filename).expect("Failed to read file");
 
-    let answer1 = solve_part1(&input);
+    let program = match parse_program(&input) {
+        Ok(program) => program,
+        Err(line_index) => {
+            println!(
+                "error: {}|{}| Failed to parse {}",
+                filename,
+                line_index + 1,
+                input.lines().nth(line_index).unwrap()
+            );
+            return;
+        }
+    };
+    let answer1 = solve_part1(&program);
     println!("Answer 1: {:?}", answer1);
 
-    let answer2 = solve_part2(&input);
+    let answer2 = solve_part2(&program);
     println!("Answer 2: {:?}", answer2);
 }
 
@@ -145,13 +165,15 @@ acc +6
 
     #[test]
     fn test1_2() {
-        assert_eq!(solve_part1(EXAMPLE1), Some(5));
+        let program = parse_program(EXAMPLE1).expect("Failed to parse program");
+        assert_eq!(solve_part1(&program), Some(5));
     }
 
     const EXAMPLE2: &str = "";
 
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+        let program = parse_program(EXAMPLE2).expect("Failed to parse program");
+        assert_eq!(solve_part2(&program), 0);
     }
 }
