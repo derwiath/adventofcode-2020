@@ -9,7 +9,7 @@ use std::fs;
 enum Instruction {
     Nop(i64),
     Acc(i64),
-    Jmp(i64),
+    Jmp(isize),
 }
 
 #[allow(dead_code)]
@@ -30,7 +30,7 @@ impl Instruction {
             match name {
                 "nop" => Some(Self::Nop(arg)),
                 "acc" => Some(Self::Acc(arg)),
-                "jmp" => Some(Self::Jmp(arg)),
+                "jmp" => Some(Self::Jmp(arg as isize)),
                 _ => None,
             }
         } else {
@@ -67,37 +67,36 @@ fn execute_program(program: &Vec<Instruction>) -> Result<i64, ExitError> {
         visited.push(false);
     }
     let mut accumulator: i64 = 0;
-    let mut pos: isize = 0;
-    loop {
-        let upos = pos as usize;
-
-        match visited.get(upos) {
+    let mut pos: usize = 0;
+    while pos < program.len() {
+        match visited.get(pos) {
             None => break,
             Some(visited) => {
                 if *visited {
-                    return Err(ExitError::InfiniteLoop(accumulator, upos));
+                    return Err(ExitError::InfiniteLoop(accumulator, pos));
                 }
             }
         }
-        visited[upos] = true;
-        println!("{:?} [{}]", program[upos], upos);
-        if let Some(instruction) = program.get(upos) {
-            match instruction {
-                Instruction::Nop(_) => {
-                    pos += 1;
-                }
-                Instruction::Acc(arg) => {
-                    accumulator += *arg as i64;
-                    pos += 1;
-                }
-                Instruction::Jmp(arg) => {
-                    pos += *arg as isize;
-                }
+        visited[pos] = true;
+        println!("{:?} [{}]", program.get(pos), pos);
+        let offset: isize = match program.get(pos) {
+            Some(Instruction::Nop(_)) => 1,
+            Some(Instruction::Acc(number)) => {
+                accumulator += *number;
+                1
             }
+            Some(Instruction::Jmp(offset)) => *offset,
+            None => {
+                return Err(ExitError::InvalidPC(pos as isize, pos));
+            }
+        };
+        let next_pos: isize = pos as isize + offset;
+        if next_pos < 0 {
+            return Err(ExitError::InvalidPC(next_pos, pos));
+        } else if next_pos as usize > program.len() {
+            return Err(ExitError::InvalidPC(next_pos, pos));
         }
-        if pos < 0 {
-            return Err(ExitError::InvalidPC(pos, upos));
-        }
+        pos = next_pos as usize;
     }
 
     Ok(accumulator)
