@@ -5,6 +5,40 @@ extern crate regex;
 use std::env;
 use std::fs;
 
+#[derive(Debug, PartialEq)]
+enum Instruction {
+    Nop(i64),
+    Acc(i64),
+    Jmp(i64),
+}
+
+#[allow(dead_code)]
+impl Instruction {
+    fn parse(s: &str) -> Option<Instruction> {
+        lazy_static! {
+            static ref INSTRUCTION_RE: regex::Regex =
+                regex::Regex::new(r"([a-z]+) ([+-]\d*)").unwrap();
+        }
+
+        if let Some(captures) = INSTRUCTION_RE.captures(s) {
+            if captures.len() != 3 {
+                return None;
+            }
+
+            let name = captures.get(1).unwrap().as_str();
+            let arg = captures.get(2).unwrap().as_str().parse::<i64>().unwrap();
+            match name {
+                "nop" => Some(Self::Nop(arg)),
+                "acc" => Some(Self::Acc(arg)),
+                "jmp" => Some(Self::Jmp(arg)),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+}
+
 fn solve_part1(input: &str) -> usize {
     lazy_static! {
         static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
@@ -45,12 +79,35 @@ mod tests8 {
     use super::*;
 
     const EXAMPLE1: &str = "
-3 seals
-4 quacks";
+nop +0
+acc +1
+jmp +4
+acc +3
+jmp -3
+acc -99
+acc +1
+jmp -4
+acc +6
+";
 
     #[test]
     fn test1_1() {
-        assert_eq!(solve_part1(EXAMPLE1), 7);
+        let instructions: [Instruction; 9] = [
+            Instruction::Nop(0),
+            Instruction::Acc(1),
+            Instruction::Jmp(4),
+            Instruction::Acc(3),
+            Instruction::Jmp(-3),
+            Instruction::Acc(-99),
+            Instruction::Acc(1),
+            Instruction::Jmp(-4),
+            Instruction::Acc(6),
+        ];
+        let mut instruction_it = instructions.iter();
+        for line in EXAMPLE1.lines().skip(1) {
+            let instruction = instruction_it.next();
+            assert_eq!(Instruction::parse(line).as_ref(), instruction);
+        }
     }
 
     const EXAMPLE2: &str = "";
