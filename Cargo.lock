@@ -61,12 +61,19 @@ dependencies = [
 name = "day8"
 version = "0.1.0"
 dependencies = [
+ "gameboy",
+]
+
+[[package]]
+name = "dayx"
+version = "0.1.0"
+dependencies = [
  "lazy_static",
  "regex",
 ]
 
 [[package]]
-name = "dayx"
+name = "gameboy"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
