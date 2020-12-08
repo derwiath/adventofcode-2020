@@ -20,6 +20,8 @@ impl Instruction {
                 regex::Regex::new(r"([a-z]+) ([+-]\d*)").unwrap();
         }
 
+        println!("line: {}", s);
+
         if let Some(captures) = INSTRUCTION_RE.captures(s) {
             if captures.len() != 3 {
                 return None;
@@ -39,21 +41,52 @@ impl Instruction {
     }
 }
 
-fn solve_part1(input: &str) -> usize {
-    lazy_static! {
-        static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
+fn solve_part1(input: &str) -> Option<i64> {
+    let instructions: Vec<Instruction> = input
+        .lines()
+        .map(|line| Instruction::parse(line))
+        .filter(|i| i.is_some())
+        .map(|i| i.unwrap())
+        .collect();
+    let mut visited: Vec<bool> = Vec::with_capacity(instructions.len());
+    for _ in instructions.iter() {
+        visited.push(false);
     }
-    let mut sum = 0;
-    for line in input.lines() {
-        if let Some(captures) = RE.captures(line) {
-            if captures.len() == 3 {
-                let count = captures.get(1).unwrap().as_str().parse::<usize>().unwrap();
-                let _thing = captures.get(2).unwrap().as_str();
-                sum += count;
+    let mut accumulator: i64 = 0;
+    let mut pos: isize = 0;
+    loop {
+        if pos < 0 {
+            break;
+        }
+        let upos = pos as usize;
+
+        match visited.get(upos) {
+            None => break,
+            Some(visited) => {
+                if *visited {
+                    break;
+                }
+            }
+        }
+        visited[upos] = true;
+        println!("{:?}", instructions[upos]);
+        if let Some(instruction) = instructions.get(upos) {
+            match instruction {
+                Instruction::Nop(_) => {
+                    pos += 1;
+                }
+                Instruction::Acc(arg) => {
+                    accumulator += *arg as i64;
+                    pos += 1;
+                }
+                Instruction::Jmp(arg) => {
+                    pos += *arg as isize;
+                }
             }
         }
     }
-    sum
+
+    Some(accumulator)
 }
 
 fn solve_part2(input: &str) -> usize {
@@ -68,10 +101,10 @@ fn main() {
     let input = fs::read_to_string(filename).expect("Failed to read file");
 
     let answer1 = solve_part1(&input);
-    println!("Answer 1: {}", answer1);
+    println!("Answer 1: {:?}", answer1);
 
     let answer2 = solve_part2(&input);
-    println!("Answer 2: {}", answer2);
+    println!("Answer 2: {:?}", answer2);
 }
 
 #[cfg(test)]
@@ -108,6 +141,11 @@ acc +6
             let instruction = instruction_it.next();
             assert_eq!(Instruction::parse(line).as_ref(), instruction);
         }
+    }
+
+    #[test]
+    fn test1_2() {
+        assert_eq!(solve_part1(EXAMPLE1), Some(5));
     }
 
     const EXAMPLE2: &str = "";
