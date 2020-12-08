@@ -5,7 +5,7 @@ extern crate regex;
 use std::env;
 use std::fs;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Instruction {
     Nop(i64),
     Acc(i64),
@@ -110,8 +110,81 @@ fn solve_part1(program: &Vec<Instruction>) -> Option<i64> {
     }
 }
 
-fn solve_part2(program: &Vec<Instruction>) -> usize {
-    program.len()
+fn solve_part2(program: &Vec<Instruction>) -> Option<(i64, usize)> {
+    let mut next_pos: Option<usize> = program.iter().position(|i| match i {
+        Instruction::Nop(_) => true,
+        _ => false,
+    });
+    while next_pos.is_some() {
+        let mut copy = program.clone();
+        let pos = next_pos.unwrap();
+        let arg = match copy.get(pos) {
+            Some(Instruction::Nop(arg)) => arg,
+            _ => {
+                panic!("wtf");
+            }
+        };
+        println!(
+            "{}: {:?} -> {:?}",
+            pos,
+            copy[pos],
+            Instruction::Jmp(*arg as isize)
+        );
+        copy[pos] = Instruction::Jmp(*arg as isize);
+
+        match execute_program(&copy) {
+            Ok(accumulator) => return Some((accumulator, pos)),
+            _ => (),
+        }
+        next_pos = program
+            .iter()
+            .skip(pos + 1)
+            .position(|i| match i {
+                Instruction::Nop(_) => true,
+                _ => false,
+            })
+            .map(|found_pos| found_pos + pos + 1);
+    }
+
+    let mut next_pos = program.iter().position(|instr| match instr {
+        Instruction::Jmp(_) => true,
+        _ => false,
+    });
+    println!("{:?}", next_pos);
+    while next_pos.is_some() {
+        let mut copy = program.clone();
+        let pos = next_pos.unwrap();
+        let arg = match copy.get(pos) {
+            Some(Instruction::Jmp(arg)) => arg,
+            Some(x) => {
+                panic!(format!("{}: wtf {:?}", pos, x));
+            }
+            None => {
+                panic!("wtf none");
+            }
+        };
+        println!(
+            "{}: {:?} -> {:?}",
+            pos + 1,
+            copy[pos],
+            Instruction::Nop(*arg as i64)
+        );
+        copy[pos] = Instruction::Nop(*arg as i64);
+
+        match execute_program(&copy) {
+            Ok(accumulator) => return Some((accumulator, pos)),
+            _ => (),
+        }
+        next_pos = program
+            .iter()
+            .skip(pos + 1)
+            .position(|i| match i {
+                Instruction::Jmp(_) => true,
+                _ => false,
+            })
+            .map(|found_pos| found_pos + pos + 1);
+    }
+    None
 }
 
 fn main() {
@@ -144,8 +217,7 @@ fn main() {
 mod tests8 {
     use super::*;
 
-    const EXAMPLE1: &str = "
-nop +0
+    const EXAMPLE1: &str = "nop +0
 acc +1
 jmp +4
 acc +3
@@ -182,11 +254,9 @@ acc +6
         assert_eq!(solve_part1(&program), Some(5));
     }
 
-    const EXAMPLE2: &str = "";
-
     #[test]
     fn test2_1() {
-        let program = parse_program(EXAMPLE2).expect("Failed to parse program");
-        assert_eq!(solve_part2(&program), 0);
+        let program = parse_program(EXAMPLE1).expect("Failed to parse program");
+        assert_eq!(solve_part2(&program), Some((8, 7)));
     }
 }
