@@ -42,8 +42,32 @@ fn solve_part1(input: &str, preamble: usize) -> Option<u64> {
     find_first_invalid(&numbers[..], preamble)
 }
 
-fn solve_part2(_input: &str) -> Option<u64> {
+fn find_conti<'a>(numbers: &'a [u64], needle: u64) -> Option<&'a [u64]> {
+    for i in 0..numbers.len() {
+        let mut sum = numbers[i];
+        for j in i + 1..numbers.len() {
+            sum += numbers[j];
+            if sum == needle {
+                return Some(&numbers[i..j + 1]);
+            } else if sum > needle {
+                break;
+            }
+        }
+    }
     None
+}
+
+fn solve_part2(input: &str, preamble: usize) -> Option<u64> {
+    let numbers = parse_numbers(input);
+    let answer1 = find_first_invalid(&numbers[..], preamble).unwrap();
+    match find_conti(&numbers[..], answer1) {
+        Some(conti) => {
+            let min = conti.iter().min().unwrap();
+            let max = conti.iter().max().unwrap();
+            Some(min + max)
+        }
+        None => None,
+    }
 }
 
 fn main() {
@@ -56,7 +80,7 @@ fn main() {
     let answer1 = solve_part1(&input, 25);
     println!("Answer 1: {:?}", answer1);
 
-    let answer2 = solve_part2(&input);
+    let answer2 = solve_part2(&input, 25);
     println!("Answer 2: {:?}", answer2);
 }
 
@@ -90,10 +114,14 @@ mod tests9 {
         assert_eq!(solve_part1(EXAMPLE1, 5), Some(127));
     }
 
-    const EXAMPLE2: &str = "";
-
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), None);
+        let numbers = parse_numbers(EXAMPLE1);
+        assert_eq!(find_conti(&numbers[..], 127), Some(&numbers[2..6]));
+    }
+
+    #[test]
+    fn test2_2() {
+        assert_eq!(solve_part2(EXAMPLE1, 5), Some(62));
     }
 }
