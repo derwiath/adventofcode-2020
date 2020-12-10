@@ -1,11 +1,11 @@
 use std::env;
 use std::fs;
 
+use std::collections::HashMap;
+
 fn parse_adapters(input: &str) -> Vec<usize> {
     let mut adapters: Vec<usize> = input.lines().map(|l| l.parse::<usize>().unwrap()).collect();
     adapters.sort_unstable();
-    let max_adapter = adapters[adapters.len() - 1];
-    adapters.push(max_adapter + 3);
     adapters
 }
 
@@ -30,13 +30,51 @@ fn solve_part1(input: &str) -> usize {
     jolt_counts[0] * jolt_counts[2]
 }
 
-fn solve_part2(_input: &str) -> u64 {
-    0
+fn get_combos(next_combos: &[(usize, usize)], cache: &mut HashMap<usize, usize>) -> usize {
+    if next_combos.len() == 0 {
+        return 1;
+    }
+    let (adapter, combos) = next_combos[0];
+    if let Some(cached) = cache.get(&adapter) {
+        return *cached;
+    }
+    let mut res = 0;
+    for i in 1..combos + 1 {
+        res += get_combos(&next_combos[i..], cache)
+    }
+    cache.insert(adapter, res);
+    res
+}
+
+fn solve_part2(input: &str) -> usize {
+    let adapters = {
+        let mut adapters = parse_adapters(input);
+        let max_adapter = adapters[adapters.len() - 1];
+        adapters.insert(0, 0);
+        adapters.push(max_adapter + 3);
+        adapters
+    };
+    let next_combos: Vec<(usize, usize)> = adapters
+        .iter()
+        .enumerate()
+        .map(|(i, adapter)| {
+            let combos = match adapters[i + 1..]
+                .iter()
+                .position(|next| next - *adapter > 3)
+            {
+                Some(pos) => pos,
+                None => adapters.len() - (i + 1),
+            };
+            (*adapter, combos)
+        })
+        .collect();
+    let mut cache = HashMap::<usize, usize>::with_capacity(next_combos.len() * 2);
+    get_combos(&next_combos[..next_combos.len() - 1], &mut cache)
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let filename = args.get(1).expect("Usage: dayx input-filename");
+    let filename = args.get(1).expect("Usage: day10 input-filename");
 
     println!("Reading input from {}", filename);
     let input = fs::read_to_string(filename).expect("Failed to read file");
@@ -109,6 +147,23 @@ mod tests10 {
 
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+        assert_eq!(solve_part2(EXAMPLE1), 8);
+    }
+
+    #[test]
+    fn test2_2() {
+        assert_eq!(solve_part2(EXAMPLE2), 19208);
+    }
+
+    const EXAMPLE3: &str = "1
+4
+5
+6
+7
+10
+";
+    #[test]
+    fn test2_3() {
+        assert_eq!(solve_part2(EXAMPLE3), 4);
     }
 }
