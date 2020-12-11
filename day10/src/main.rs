@@ -1,40 +1,29 @@
 use std::env;
 use std::fs;
 
-fn parse_adapters(input: &str) -> Vec<u64> {
-    let mut adapters: Vec<u64> = input.lines().map(|l| l.parse::<u64>().unwrap()).collect();
+fn parse_adapters(input: &str) -> Vec<usize> {
+    let mut adapters: Vec<usize> = input.lines().map(|l| l.parse::<usize>().unwrap()).collect();
     adapters.sort_unstable();
     let max_adapter = adapters[adapters.len() - 1];
     adapters.push(max_adapter + 3);
     adapters
 }
-/*
-1
-4
-5
-6
-7
-10
-11
-12
-15
-16
-19
-*/
-fn solve_part1(input: &str) -> u64 {
-    let adapters = parse_adapters(input);
-    let mut jolt_counts: [u64; 3] = [0, 0, 0];
-    let mut outlet: u64 = 0;
+
+fn solve_part1(input: &str) -> usize {
+    let adapters = {
+        let mut adapters = parse_adapters(input);
+        let max_adapter = adapters[adapters.len() - 1];
+        adapters.push(max_adapter + 3);
+        adapters
+    };
+    let mut jolt_counts: [usize; 3] = [0, 0, 0];
+    let mut outlet: usize = 0;
     for adapter in adapters {
         let diff = adapter - outlet;
         if diff > 3 {
             panic!("adapter {} out of range, outlet {}", adapter, outlet);
         }
-        jolt_counts[(diff - 1) as usize] += 1;
-        println!(
-            "adapter {:3}, outlet {:3}, diff {:1}, jolt_counts {:3} {:3}",
-            adapter, outlet, diff, jolt_counts[0], jolt_counts[2]
-        );
+        jolt_counts[diff - 1] += 1;
         outlet = adapter;
     }
 
