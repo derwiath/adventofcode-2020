@@ -52,6 +52,11 @@ impl Pos {
         Self { x, y }
     }
 
+    fn inc(&mut self, other: &Pos) {
+        self.x += other.x;
+        self.y += other.y;
+    }
+
     fn index(&self, size: &Size) -> Option<usize> {
         if self.x < 0 || self.y < 0 {
             return None;
@@ -121,6 +126,34 @@ impl OccupiedCounts {
                         let neighbour = pos.clone() + (*offset).clone();
                         layout.get_seat_at(&neighbour) == Some(&Seat::O)
                     })
+                    .count();
+                counts.push(count as u8);
+            }
+        }
+
+        OccupiedCounts::new(layout.size.clone(), counts)
+    }
+
+    fn create_from_line_of_sight(layout: &Layout) -> OccupiedCounts {
+        let mut counts = Vec::<u8>::with_capacity(layout.seats.len());
+
+        let directions: [Pos; 8] = [
+            Pos::new(0, -1),
+            Pos::new(1, -1),
+            Pos::new(1, 0),
+            Pos::new(1, 1),
+            Pos::new(0, 1),
+            Pos::new(-1, 1),
+            Pos::new(-1, 0),
+            Pos::new(-1, -1),
+        ];
+
+        for y in 0..layout.size.height {
+            for x in 0..layout.size.width {
+                let pos = Pos::new(x as isize, y as isize);
+                let count = directions
+                    .iter()
+                    .filter(|direction| layout.ray_cast(&pos, direction) == Some(&Seat::O))
                     .count();
                 counts.push(count as u8);
             }
@@ -227,9 +260,47 @@ impl Layout {
             size: self.size.clone(),
             seats,
         };
+        /*
         println!("{}\n", self);
         println!("{}\n", occupied);
         println!("{}", transformed);
+        */
+        transformed
+    }
+
+    fn step2(&self) -> Self {
+        let mut seats = Vec::<Seat>::with_capacity(self.seats.len());
+        let occupied = OccupiedCounts::create_from_line_of_sight(self);
+        for (i, seat) in self.seats.iter().enumerate() {
+            let count = occupied.counts[i];
+            seats.push(match seat {
+                Seat::E => {
+                    if count == 0 {
+                        Seat::O
+                    } else {
+                        Seat::E
+                    }
+                }
+                Seat::O => {
+                    if count >= 5 {
+                        Seat::E
+                    } else {
+                        Seat::O
+                    }
+                }
+                Seat::F => Seat::F,
+            })
+        }
+
+        let transformed = Self {
+            size: self.size.clone(),
+            seats,
+        };
+        /*
+        println!("{}\n", self);
+        println!("{}\n", occupied);
+        println!("{}", transformed);
+        */
         transformed
     }
 
@@ -239,6 +310,18 @@ impl Layout {
         } else {
             None
         }
+    }
+
+    fn ray_cast(&self, pos: &Pos, dir: &Pos) -> Option<&Seat> {
+        let mut pos = pos.clone();
+        pos.inc(dir);
+        while let Some(seat) = self.get_seat_at(&pos) {
+            if seat != &Seat::F {
+                return Some(seat);
+            }
+            pos.inc(dir);
+        }
+        None
     }
 }
 
@@ -257,7 +340,17 @@ fn solve_part1(input: &str) -> usize {
 }
 
 fn solve_part2(input: &str) -> usize {
-    input.len()
+    let mut layout = Layout::new(input);
+    let mut prev_layout: Option<Layout> = None;
+    let mut steps = 0;
+    while prev_layout.is_none() || layout != prev_layout.unwrap() {
+        steps += 1;
+        println!("{}", steps);
+        let new_layout = layout.step2();
+        prev_layout = Some(layout);
+        layout = new_layout;
+    }
+    layout.seats.iter().filter(|s| **s == Seat::O).count()
 }
 
 fn main() {
@@ -471,7 +564,7 @@ L.L.L
     const EXAMPLE2: &str = "";
 
     #[test]
-    fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+    fn test2_occupied_seats() {
+        assert_eq!(solve_part2(STATES[0]), 26);
     }
 }
