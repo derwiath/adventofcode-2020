@@ -21,11 +21,28 @@ impl fmt::Display for Seat {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct Size {
+    width: usize,
+    height: usize,
+}
+
+impl Size {
+    fn new(width: usize, height: usize) -> Self {
+        Self { width, height }
+    }
+}
+
+impl fmt::Display for Size {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}, {}", self.width, self.height)
+    }
+}
+
 #[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 struct OccupiedCounts {
-    width: usize,
-    height: usize,
+    size: Size,
     counts: Vec<u8>,
 }
 
@@ -38,12 +55,8 @@ fn inc_adjacent_counts(layout: &Layout, pos: isize, offsets: &[isize], counts: &
 }
 
 impl OccupiedCounts {
-    fn new(width: usize, height: usize, counts: Vec<u8>) -> Self {
-        Self {
-            width,
-            height,
-            counts,
-        }
+    fn new(size: Size, counts: Vec<u8>) -> Self {
+        Self { size, counts }
     }
 
     fn from(layout: &Layout) -> OccupiedCounts {
@@ -52,8 +65,8 @@ impl OccupiedCounts {
             counts.push(0);
         }
 
-        let height = layout.height as isize;
-        let width = layout.width as isize;
+        let height = layout.size.height as isize;
+        let width = layout.size.width as isize;
         let middle_row: [isize; 8] = [
             -width - 1,
             -width,
@@ -72,7 +85,7 @@ impl OccupiedCounts {
         }
         println!(
             "top_row\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
 
         for x in 1..width - 1 {
@@ -82,7 +95,7 @@ impl OccupiedCounts {
         }
         println!(
             "middle_row\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
 
         for x in 1..width - 1 {
@@ -90,7 +103,7 @@ impl OccupiedCounts {
         }
         println!(
             "bottom_row\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
 
         let left_column = [-width, -width + 1, 1, width, width + 1];
@@ -100,7 +113,7 @@ impl OccupiedCounts {
         }
         println!(
             "left_column\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
 
         for y in 1..height - 1 {
@@ -108,7 +121,7 @@ impl OccupiedCounts {
         }
         println!(
             "right_column\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
 
         let top_left = [1, width, width + 1];
@@ -118,26 +131,25 @@ impl OccupiedCounts {
         inc_adjacent_counts(layout, 0, &top_left, &mut counts);
         println!(
             "top_left\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
         inc_adjacent_counts(layout, width - 1, &top_right, &mut counts);
         println!(
             "top_right\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
         inc_adjacent_counts(layout, width * (height - 1), &bottom_left, &mut counts);
         println!(
             "bottom_left\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
         inc_adjacent_counts(layout, width * height - 1, &bottom_right, &mut counts);
         println!(
             "bottom_right\n{}",
-            OccupiedCounts::new(layout.width, layout.height, counts.clone())
+            OccupiedCounts::new(layout.size.clone(), counts.clone())
         );
         OccupiedCounts {
-            width: layout.width,
-            height: layout.height,
+            size: layout.size.clone(),
             counts,
         }
     }
@@ -146,8 +158,8 @@ impl OccupiedCounts {
 impl fmt::Display for OccupiedCounts {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut pos = 0;
-        for _ in 0..self.height {
-            let next_pos = pos + self.width;
+        for _ in 0..self.size.height {
+            let next_pos = pos + self.size.width;
             for count in &self.counts[pos..next_pos] {
                 write!(f, "{}", count)?;
             }
@@ -162,16 +174,15 @@ impl fmt::Display for OccupiedCounts {
 #[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 struct Layout {
-    width: usize,
-    height: usize,
+    size: Size,
     seats: Vec<Seat>,
 }
 
 impl fmt::Display for Layout {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut pos = 0;
-        for _ in 0..self.height {
-            let next_pos = pos + self.width;
+        for _ in 0..self.size.height {
+            let next_pos = pos + self.size.width;
             for seat in &self.seats[pos..next_pos] {
                 write!(f, "{}", seat)?;
             }
@@ -204,11 +215,11 @@ impl Layout {
                 c => panic!("Whats up with '{}'", c as u8),
             })
             .collect();
+        let height = seats.len() / width;
 
         assert_eq!(seats.len() % width, 0);
         Self {
-            width,
-            height: seats.len() / width,
+            size: Size::new(width, height),
             seats,
         }
     }
@@ -238,8 +249,7 @@ impl Layout {
         }
 
         let transformed = Self {
-            width: self.width,
-            height: self.height,
+            size: self.size.clone(),
             seats,
         };
         println!("{}\n", self);
@@ -372,8 +382,7 @@ L.L.L
 
     #[test]
     fn test1_parse_layout_size() {
-        assert_eq!(Layout::new(STATES[0]).width, 10);
-        assert_eq!(Layout::new(STATES[0]).height, 10);
+        assert_eq!(Layout::new(STATES[0]).size, Size::new(10, 10));
     }
 
     #[test]
@@ -409,7 +418,7 @@ L.L.L
 
         let layout = Layout::new(state);
         let occupied = OccupiedCounts::from(&layout);
-        let facit = OccupiedCounts::new(4, 4, answer);
+        let facit = OccupiedCounts::new(Size::new(4, 4), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
         assert_eq!(occupied, facit);
@@ -429,7 +438,7 @@ L.L.L
 
         let layout = Layout::new(state);
         let occupied = OccupiedCounts::from(&layout);
-        let facit = OccupiedCounts::new(3, 3, answer);
+        let facit = OccupiedCounts::new(Size::new(3, 3), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
         assert_eq!(occupied, facit);
@@ -447,7 +456,7 @@ L.L.L
 
         let layout = Layout::new(state);
         let occupied = OccupiedCounts::from(&layout);
-        let facit = OccupiedCounts::new(2, 2, answer);
+        let facit = OccupiedCounts::new(Size::new(2, 2), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
         assert_eq!(occupied, facit);
