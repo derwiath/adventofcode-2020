@@ -1,6 +1,7 @@
 use std::env;
 use std::fmt;
 use std::fs;
+use std::ops;
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq)]
@@ -40,18 +41,56 @@ impl fmt::Display for Size {
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq)]
+struct Pos {
+    x: isize,
+    y: isize,
+}
+
+impl Pos {
+    fn new(x: isize, y: isize) -> Self {
+        Self { x, y }
+    }
+
+    fn index(&self, size: &Size) -> Option<usize> {
+        if self.x < 0 || self.y < 0 {
+            return None;
+        }
+
+        let x = self.x as usize;
+        let y = self.y as usize;
+        if x >= size.width {
+            None
+        } else if y >= size.height {
+            None
+        } else {
+            Some(x + y * size.width)
+        }
+    }
+}
+
+impl fmt::Display for Pos {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}, {}", self.x, self.y)
+    }
+}
+
+impl ops::Add for Pos {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+#[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 struct OccupiedCounts {
     size: Size,
     counts: Vec<u8>,
-}
-
-fn inc_adjacent_counts(layout: &Layout, pos: isize, offsets: &[isize], counts: &mut Vec<u8>) {
-    if layout.seats[pos as usize] == Seat::O {
-        for offset in offsets {
-            counts[(pos + offset) as usize] += 1;
-        }
-    }
 }
 
 impl OccupiedCounts {
@@ -61,97 +100,33 @@ impl OccupiedCounts {
 
     fn from(layout: &Layout) -> OccupiedCounts {
         let mut counts = Vec::<u8>::with_capacity(layout.seats.len());
-        for _ in 0..counts.capacity() {
-            counts.push(0);
-        }
 
-        let height = layout.size.height as isize;
-        let width = layout.size.width as isize;
-        let middle_row: [isize; 8] = [
-            -width - 1,
-            -width,
-            -width + 1,
-            -1,
-            1,
-            width - 1,
-            width,
-            width + 1,
+        let offsets: [Pos; 8] = [
+            Pos::new(-1, -1),
+            Pos::new(0, -1),
+            Pos::new(1, -1),
+            Pos::new(-1, 0),
+            Pos::new(1, 0),
+            Pos::new(-1, 1),
+            Pos::new(0, 1),
+            Pos::new(1, 1),
         ];
-        let top_row = &middle_row[3..];
-        let bottom_row = &middle_row[0..5];
 
-        for x in 1..width - 1 {
-            inc_adjacent_counts(layout, x, top_row, &mut counts);
-        }
-        println!(
-            "top_row\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-
-        for x in 1..width - 1 {
-            for y in 1..height - 1 {
-                inc_adjacent_counts(layout, y * width + x, &middle_row, &mut counts);
+        for y in 0..layout.size.height {
+            for x in 0..layout.size.width {
+                let pos = Pos::new(x as isize, y as isize);
+                let count = offsets
+                    .iter()
+                    .filter(|offset| {
+                        let neighbour = pos.clone() + (*offset).clone();
+                        layout.get_seat_at(&neighbour) == Some(&Seat::O)
+                    })
+                    .count();
+                counts.push(count as u8);
             }
         }
-        println!(
-            "middle_row\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
 
-        for x in 1..width - 1 {
-            inc_adjacent_counts(layout, x + width * (height - 1), bottom_row, &mut counts);
-        }
-        println!(
-            "bottom_row\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-
-        let left_column = [-width, -width + 1, 1, width, width + 1];
-        let right_column = [-width, -width - 1, -1, width, width - 1];
-        for y in 1..height - 1 {
-            inc_adjacent_counts(layout, y * width, &left_column, &mut counts);
-        }
-        println!(
-            "left_column\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-
-        for y in 1..height - 1 {
-            inc_adjacent_counts(layout, y * width + (width - 1), &right_column, &mut counts);
-        }
-        println!(
-            "right_column\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-
-        let top_left = [1, width, width + 1];
-        let top_right = [-1, width, width - 1];
-        let bottom_left = [1, -width, -width + 1];
-        let bottom_right = [-1, -width, -width - 1];
-        inc_adjacent_counts(layout, 0, &top_left, &mut counts);
-        println!(
-            "top_left\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-        inc_adjacent_counts(layout, width - 1, &top_right, &mut counts);
-        println!(
-            "top_right\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-        inc_adjacent_counts(layout, width * (height - 1), &bottom_left, &mut counts);
-        println!(
-            "bottom_left\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-        inc_adjacent_counts(layout, width * height - 1, &bottom_right, &mut counts);
-        println!(
-            "bottom_right\n{}",
-            OccupiedCounts::new(layout.size.clone(), counts.clone())
-        );
-        OccupiedCounts {
-            size: layout.size.clone(),
-            counts,
-        }
+        OccupiedCounts::new(layout.size.clone(), counts)
     }
 }
 
@@ -256,6 +231,14 @@ impl Layout {
         println!("{}\n", occupied);
         println!("{}", transformed);
         transformed
+    }
+
+    fn get_seat_at(&self, pos: &Pos) -> Option<&Seat> {
+        if let Some(index) = pos.index(&self.size) {
+            self.seats.get(index)
+        } else {
+            None
+        }
     }
 }
 
