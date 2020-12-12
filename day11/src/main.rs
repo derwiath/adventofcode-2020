@@ -98,7 +98,7 @@ impl OccupiedCounts {
         Self { size, counts }
     }
 
-    fn from(layout: &Layout) -> OccupiedCounts {
+    fn create_from_adjacent(layout: &Layout) -> OccupiedCounts {
         let mut counts = Vec::<u8>::with_capacity(layout.seats.len());
 
         let offsets: [Pos; 8] = [
@@ -201,7 +201,7 @@ impl Layout {
 
     fn step(&self) -> Self {
         let mut seats = Vec::<Seat>::with_capacity(self.seats.len());
-        let occupied = OccupiedCounts::from(self);
+        let occupied = OccupiedCounts::create_from_adjacent(self);
         for (i, seat) in self.seats.iter().enumerate() {
             let count = occupied.counts[i];
             seats.push(match seat {
@@ -400,7 +400,7 @@ L.L.L
         ];
 
         let layout = Layout::new(state);
-        let occupied = OccupiedCounts::from(&layout);
+        let occupied = OccupiedCounts::create_from_adjacent(&layout);
         let facit = OccupiedCounts::new(Size::new(4, 4), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
@@ -420,7 +420,7 @@ L.L.L
         ];
 
         let layout = Layout::new(state);
-        let occupied = OccupiedCounts::from(&layout);
+        let occupied = OccupiedCounts::create_from_adjacent(&layout);
         let facit = OccupiedCounts::new(Size::new(3, 3), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
@@ -438,7 +438,7 @@ L.L.L
         ];
 
         let layout = Layout::new(state);
-        let occupied = OccupiedCounts::from(&layout);
+        let occupied = OccupiedCounts::create_from_adjacent(&layout);
         let facit = OccupiedCounts::new(Size::new(2, 2), answer);
         println!("{}\n{}\n{}", layout, occupied, facit);
 
