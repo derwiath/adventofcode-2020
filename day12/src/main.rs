@@ -33,6 +33,16 @@ impl Vec2 {
     fn manhattan_distance(&self) -> i64 {
         self.x.abs() + self.y.abs()
     }
+
+    fn rotate(&self, turns: &u64) -> Vec2 {
+        match turns % 4 {
+            0 => Vec2::new(self.x, self.y),
+            1 => Vec2::new(self.x, -self.y),
+            2 => Vec2::new(-self.x, -self.y),
+            3 => Vec2::new(-self.x, self.y),
+            _ => panic!("math is hard"),
+        }
+    }
 }
 
 impl fmt::Display for Vec2 {
@@ -204,6 +214,43 @@ impl fmt::Display for Ship {
     }
 }
 
+#[allow(dead_code)]
+struct WaypointShip {
+    pos: Vec2,
+    waypoint: Vec2,
+}
+
+#[allow(dead_code)]
+impl WaypointShip {
+    fn new() -> Self {
+        Self {
+            pos: Vec2::new(0, 0),
+            waypoint: Vec2::new(10, 1),
+        }
+    }
+
+    fn apply(&mut self, instruction: &Instruction) {
+        match instruction {
+            Instruction::Move(trans) => {
+                self.waypoint += trans.clone();
+            }
+            Instruction::Turn(turns) => {
+                self.waypoint = self.waypoint.rotate(turns);
+            }
+            Instruction::Forward(dist) => {
+                let trans = self.waypoint.clone() * *dist;
+                self.pos += trans;
+            }
+        };
+    }
+}
+
+impl fmt::Display for WaypointShip {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.pos, self.waypoint)
+    }
+}
+
 fn parse_instructions(input: &str) -> Result<Vec<Instruction>, usize> {
     input
         .lines()
@@ -232,7 +279,14 @@ fn solve_part1(input: &str) -> usize {
 }
 
 fn solve_part2(input: &str) -> usize {
-    input.len()
+    let instructions = parse_instructions(input).unwrap();
+    let mut ship = WaypointShip::new();
+    instructions.iter().for_each(|i| {
+        print!("{} + {} = ", ship, i);
+        ship.apply(i);
+        println!("{}", ship);
+    });
+    ship.pos.manhattan_distance() as usize
 }
 
 fn main() {
@@ -270,10 +324,28 @@ mod tests12 {
         assert_eq!(Instruction::parse("F10"), Some(Instruction::Forward(10)));
     }
 
-    const EXAMPLE2: &str = "";
-
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+        assert_eq!(solve_part2(EXAMPLE1), 286);
+    }
+
+    #[test]
+    fn test2_rot0() {
+        assert_eq!(Vec2::new(10, 4).rotate(&0), Vec2::new(10, 4));
+    }
+
+    #[test]
+    fn test2_rot1() {
+        assert_eq!(Vec2::new(10, 4).rotate(&1), Vec2::new(10, -4));
+    }
+
+    #[test]
+    fn test2_rot2() {
+        assert_eq!(Vec2::new(10, 4).rotate(&2), Vec2::new(-10, -4));
+    }
+
+    #[test]
+    fn test2_rot3() {
+        assert_eq!(Vec2::new(10, 4).rotate(&3), Vec2::new(-10, 4));
     }
 }
