@@ -210,7 +210,7 @@ impl Ship {
 
 impl fmt::Display for Ship {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.pos, self.dir)
+        write!(f, "({}) ({})", self.pos, self.dir)
     }
 }
 
@@ -247,7 +247,7 @@ impl WaypointShip {
 
 impl fmt::Display for WaypointShip {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.pos, self.waypoint)
+        write!(f, "({}) ({})", self.pos, self.waypoint)
     }
 }
 
@@ -271,9 +271,9 @@ fn solve_part1(input: &str) -> usize {
     let instructions = parse_instructions(input).unwrap();
     let mut ship = Ship::new();
     instructions.iter().for_each(|i| {
-        print!("{} + {} = ", ship, i);
+        print!("[{}] + {} = ", ship, i);
         ship.apply(i);
-        println!("{}", ship);
+        println!("[{}]", ship);
     });
     ship.pos.manhattan_distance() as usize
 }
@@ -282,9 +282,9 @@ fn solve_part2(input: &str) -> usize {
     let instructions = parse_instructions(input).unwrap();
     let mut ship = WaypointShip::new();
     instructions.iter().for_each(|i| {
-        print!("{} + {} = ", ship, i);
+        print!("[{}] + [{}] = ", ship, i);
         ship.apply(i);
-        println!("{}", ship);
+        println!("[{}]", ship);
     });
     ship.pos.manhattan_distance() as usize
 }
