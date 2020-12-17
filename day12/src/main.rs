@@ -37,9 +37,9 @@ impl Vec2 {
     fn rotate(&self, turns: &u64) -> Vec2 {
         match turns % 4 {
             0 => Vec2::new(self.x, self.y),
-            1 => Vec2::new(self.x, -self.y),
+            1 => Vec2::new(self.y, -self.x),
             2 => Vec2::new(-self.x, -self.y),
-            3 => Vec2::new(-self.x, self.y),
+            3 => Vec2::new(-self.y, self.x),
             _ => panic!("math is hard"),
         }
     }
@@ -111,8 +111,8 @@ impl Instruction {
                     assert_eq!(arg % 90, 0);
                     let turns = arg / 90;
                     let turns = turns % 4;
-                    let turns = if name == "R" { turns } else { 4 - turns };
-                    Some(Self::Turn(turns as u64))
+                    let right_turns = if name == "R" { turns } else { (4 - turns) % 4 };
+                    Some(Self::Turn(right_turns as u64))
                 }
                 "F" => Some(Self::Forward(arg)),
                 _ => None,
@@ -325,6 +325,24 @@ mod tests12 {
     }
 
     #[test]
+    fn test1_left() {
+        assert_eq!(Instruction::parse("L0"), Some(Instruction::Turn(0)));
+        assert_eq!(Instruction::parse("L90"), Some(Instruction::Turn(3)));
+        assert_eq!(Instruction::parse("L180"), Some(Instruction::Turn(2)));
+        assert_eq!(Instruction::parse("L270"), Some(Instruction::Turn(1)));
+        assert_eq!(Instruction::parse("L360"), Some(Instruction::Turn(0)));
+    }
+
+    #[test]
+    fn test1_right() {
+        assert_eq!(Instruction::parse("R0"), Some(Instruction::Turn(0)));
+        assert_eq!(Instruction::parse("R90"), Some(Instruction::Turn(1)));
+        assert_eq!(Instruction::parse("R180"), Some(Instruction::Turn(2)));
+        assert_eq!(Instruction::parse("R270"), Some(Instruction::Turn(3)));
+        assert_eq!(Instruction::parse("R360"), Some(Instruction::Turn(0)));
+    }
+
+    #[test]
     fn test2_1() {
         assert_eq!(solve_part2(EXAMPLE1), 286);
     }
@@ -336,7 +354,7 @@ mod tests12 {
 
     #[test]
     fn test2_rot1() {
-        assert_eq!(Vec2::new(10, 4).rotate(&1), Vec2::new(10, -4));
+        assert_eq!(Vec2::new(10, 4).rotate(&1), Vec2::new(4, -10));
     }
 
     #[test]
@@ -346,6 +364,6 @@ mod tests12 {
 
     #[test]
     fn test2_rot3() {
-        assert_eq!(Vec2::new(10, 4).rotate(&3), Vec2::new(-10, 4));
+        assert_eq!(Vec2::new(10, 4).rotate(&3), Vec2::new(-4, 10));
     }
 }
