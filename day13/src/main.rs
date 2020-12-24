@@ -19,8 +19,45 @@ fn solve_part1(input: &str) -> Option<u64> {
     Some(bus_id * wait_time)
 }
 
-fn solve_part2(_input: &str) -> Option<u64> {
-    None
+#[derive(Debug, PartialEq, PartialOrd)]
+struct Hit {
+    start: u64,
+    period: u64,
+}
+
+fn first_hit(a: u64, start: u64, b: u64, offset: u64) -> Hit {
+    let mut x = start;
+    loop {
+        if x >= offset && (x + offset) % b == 0 {
+            return Hit {
+                start: x,
+                period: a * b,
+            };
+        }
+        x += a;
+    }
+}
+
+fn solve_part2(input: &str) -> Option<u64> {
+    // 17,x,13,19 => is 3417
+    let first = input.split(",").nth(0).unwrap().parse::<u64>().unwrap();
+    let bus_ids_and_offsets: Vec<(u64, u64)> = input
+        .split(",")
+        .enumerate()
+        .skip(1)
+        .filter(|(_, s)| s != &"x")
+        .map(|(i, s)| (s.parse::<u64>().unwrap(), i as u64))
+        .collect();
+    let mut a = first;
+    let mut start = 0;
+    for (bus_id, offset) in bus_ids_and_offsets {
+        let hit = first_hit(a, start, bus_id, offset);
+        println!("{:?}", hit);
+        start = hit.start;
+        a = hit.period;
+    }
+
+    Some(start)
 }
 
 fn main() {
@@ -33,7 +70,7 @@ fn main() {
     let answer1 = solve_part1(&input);
     println!("Answer 1: {:?}", answer1);
 
-    let answer2 = solve_part2(&input);
+    let answer2 = solve_part2(&input.lines().nth(1).unwrap());
     println!("Answer 2: {:?}", answer2);
 }
 
@@ -53,16 +90,11 @@ mod tests13 {
     #[test]
     fn test2_0() {
         const EXAMPLE2_0: &str = "7,13,x,x,59,x,31,19";
-        assert_eq!(solve_part2(EXAMPLE2_0), Some(1068788));
+        assert_eq!(solve_part2(EXAMPLE2_0), Some(1068781));
     }
 
     #[test]
     fn test2_1() {
-        /*
-        (t + 0) % 17 = 0
-        (t + 2) % 13 = 0
-        (t + 3) % 19 = 0
-        */
         const EXAMPLE2_1: &str = "17,x,13,19"; // is 3417.
         assert_eq!(solve_part2(EXAMPLE2_1), Some(3417));
     }
@@ -89,5 +121,16 @@ mod tests13 {
     fn test2_5() {
         const EXAMPLE2_5: &str = "1789,37,47,1889"; // first occurs at timestamp 1202161486.
         assert_eq!(solve_part2(EXAMPLE2_5), Some(1202161486));
+    }
+
+    #[test]
+    fn test2_6() {
+        assert_eq!(
+            first_hit(17, 0, 13, 2),
+            Hit {
+                start: 102,
+                period: 17 * 13
+            }
+        );
     }
 }
