@@ -2,6 +2,7 @@
 extern crate lazy_static;
 extern crate regex;
 
+use std::collections;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -46,10 +47,14 @@ impl Mask {
                     _ => panic!("oh noh"),
                 }
             }
-            Some(Mask::new(set, !clear))
+            Some(Mask::new(set, clear))
         } else {
             None
         }
+    }
+
+    pub fn apply_value(&self, value: u64) -> u64 {
+        (value | self.set) & !self.clear
     }
 }
 
@@ -135,21 +140,22 @@ impl fmt::Display for Instruction {
     }
 }
 
-fn solve_part1(input: &str) -> usize {
-    lazy_static! {
-        static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
-    }
-    let mut sum = 0;
-    for line in input.lines() {
-        if let Some(captures) = RE.captures(line) {
-            if captures.len() == 3 {
-                let count = captures.get(1).unwrap().as_str().parse::<usize>().unwrap();
-                let _thing = captures.get(2).unwrap().as_str();
-                sum += count;
+fn solve_part1(input: &str) -> u64 {
+    let mut mem = collections::HashMap::<u64, u64>::new();
+    let mut mask = Mask::new(0, 0);
+    for line in input.lines().filter(|l| l.len() > 0) {
+        match Instruction::parse(line) {
+            Some(Instruction::SetMask(m)) => {
+                mask = m;
             }
+            Some(Instruction::WriteValue(write)) => {
+                let value = mask.apply_value(write.value);
+                mem.insert(write.address, value);
+            }
+            _ => panic!(format!("Fail to parse: {}", line)),
         }
     }
-    sum
+    mem.iter().map(|(_, value)| value).sum()
 }
 
 fn solve_part2(input: &str) -> usize {
@@ -177,7 +183,7 @@ fn main() {
 mod tests14 {
     use super::*;
 
-    const EXAMPLE1: &str = "
+    const EXAMPLE1: &str = "\
         mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X\n\
         mem[8] = 11\n\
         mem[7] = 101\n\
