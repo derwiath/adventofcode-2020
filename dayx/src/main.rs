@@ -28,7 +28,10 @@ fn solve_part2(input: &str) -> usize {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let filename = args.get(1).expect("Usage: dayx input-filename");
+    const PACKAGE_NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
+    let filename = args
+        .get(1)
+        .expect(format!("Usage: {} input-filename", PACKAGE_NAME.unwrap()).as_str());
 
     println!("Reading input from {}", filename);
     let input = fs::read_to_string(filename).expect("Failed to read file");
