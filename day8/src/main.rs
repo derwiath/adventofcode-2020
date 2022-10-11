@@ -57,7 +57,7 @@ fn solve_part2(program: &Vec<gameboy::Instruction>) -> Option<(i64, usize)> {
         let arg = match copy.get(pos) {
             Some(gameboy::Instruction::Jmp(arg)) => arg,
             Some(x) => {
-                panic!(format!("{}: wtf {:?}", pos, x));
+                panic!("{}: wtf {:?}", pos, x);
             }
             None => {
                 panic!("wtf none");

@@ -204,7 +204,7 @@ fn solve_part1(input: &str) -> u64 {
                 let value = mask.apply_value(write.value);
                 mem.insert(write.address, value);
             }
-            _ => panic!(format!("Fail to parse: {}", line)),
+            _ => panic!("Fail to parse: {}", line),
         }
     }
     mem.iter().map(|(_, value)| value).sum()
@@ -223,7 +223,7 @@ fn solve_part2(input: &str) -> u64 {
                     mem.insert(address, write.value);
                 }
             }
-            _ => panic!(format!("Fail to parse: {}", line)),
+            _ => panic!("Fail to parse: {}", line),
         }
     }
     mem.iter().map(|(_, value)| value).sum()
