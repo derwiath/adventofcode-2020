@@ -5,7 +5,7 @@ extern crate regex;
 use std::env;
 use std::fs;
 
-fn solve_part1(input: &str) -> usize {
+fn solve_part1(input: &str, _: u32) -> usize {
     lazy_static! {
         static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
     }
@@ -22,10 +22,6 @@ fn solve_part1(input: &str) -> usize {
     sum
 }
 
-fn solve_part2(input: &str) -> usize {
-    input.len()
-}
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     const PACKAGE_NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
@@ -36,30 +32,46 @@ fn main() {
     println!("Reading input from {}", filename);
     let input = fs::read_to_string(filename).expect("Failed to read file");
 
-    let answer1 = solve_part1(&input);
+    let answer1 = solve_part1(&input, 2020);
     println!("Answer 1: {}", answer1);
-
-    let answer2 = solve_part2(&input);
-    println!("Answer 2: {}", answer2);
 }
 
 #[cfg(test)]
-mod testsx {
+mod tests15 {
     use super::*;
 
-    const EXAMPLE1: &str = "
-3 seals
-4 quacks";
+    #[test]
+    fn test1_0() {
+        assert_eq!(solve_part1("0,3,6", 2020), 436);
+    }
 
     #[test]
     fn test1_1() {
-        assert_eq!(solve_part1(EXAMPLE1), 7);
+        assert_eq!(solve_part1("1,3,2", 2020), 1);
     }
 
-    const EXAMPLE2: &str = "";
+    #[test]
+    fn test1_2() {
+        assert_eq!(solve_part1("2,1,3", 2020), 10);
+    }
 
     #[test]
-    fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+    fn test1_3() {
+        assert_eq!(solve_part1("1,2,3", 2020), 27);
+    }
+
+    #[test]
+    fn test1_4() {
+        assert_eq!(solve_part1("2,3,1", 2020), 78);
+    }
+
+    #[test]
+    fn test1_5() {
+        assert_eq!(solve_part1("3,2,1", 2020), 438);
+    }
+
+    #[test]
+    fn test1_6() {
+        assert_eq!(solve_part1("3,1,2", 2020), 1836);
     }
 }
