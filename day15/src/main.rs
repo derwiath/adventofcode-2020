@@ -129,4 +129,38 @@ mod tests15 {
     fn test1_6() {
         assert_eq!(solve_part1("3,1,2", 2020), 1836);
     }
+    #[test]
+    fn test2_1() {
+        assert_eq!(solve_part2("0,3,6", 30000000), 175594);
+    }
+
+    #[test]
+    fn test2_2() {
+        assert_eq!(solve_part2("1,3,2", 30000000), 2578);
+    }
+
+    #[test]
+    fn test2_3() {
+        assert_eq!(solve_part2("2,1,3", 30000000), 3544142);
+    }
+
+    #[test]
+    fn test2_4() {
+        assert_eq!(solve_part2("1,2,3", 30000000), 261214);
+    }
+
+    #[test]
+    fn test2_5() {
+        assert_eq!(solve_part2("2,3,1", 30000000), 6895259);
+    }
+
+    #[test]
+    fn test2_6() {
+        assert_eq!(solve_part2("3,2,1", 30000000), 18);
+    }
+
+    #[test]
+    fn test2_7() {
+        assert_eq!(solve_part2("3,1,2", 30000000), 362);
+    }
 }
