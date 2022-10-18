@@ -12,6 +12,13 @@ struct Range {
     max: usize,
 }
 
+#[derive(Debug, PartialEq)]
+struct Rule {
+    label: String,
+    range1: Range,
+    range2: Range,
+}
+
 impl Range {
     fn new(min: usize, max: usize) -> Range {
         Range { min, max }
@@ -28,6 +35,16 @@ impl Range {
 
     fn includes(&self, number: &usize) -> bool {
         self.min <= *number && *number <= self.max
+    }
+}
+
+impl Rule {
+    fn new(label: &str, range1: Range, range2: Range) -> Rule {
+        Rule {
+            label: label.to_owned(),
+            range1,
+            range2,
+        }
     }
 }
 
@@ -56,20 +73,22 @@ impl TicketInfo {
     }
 }
 
-fn parse_rule(line: &str) -> Result<(Range, Range), ()> {
+fn parse_rule(line: &str) -> Result<Rule, ()> {
     lazy_static! {
         static ref RULES_RE: regex::Regex =
-            regex::Regex::new(r".*: ([\d]*)-([\d]*) or ([\d]*)-([\d]*)").unwrap();
+            regex::Regex::new(r"(.*): ([\d]*)-([\d]*) or ([\d]*)-([\d]*)").unwrap();
     }
     if let Some(captures) = RULES_RE.captures(line) {
-        assert_eq!(captures.len(), 5);
+        assert_eq!(captures.len(), 6);
+        let label: &str = &captures[1];
         let numbers: Vec<usize> = captures
             .iter()
-            .skip(1)
+            .skip(2)
             .map(|s| s.unwrap().as_str().parse::<usize>().unwrap())
             .collect();
-        Ok((
-            (Range::new(numbers[0], numbers[1])),
+        Ok(Rule::new(
+            label,
+            Range::new(numbers[0], numbers[1]),
             Range::new(numbers[2], numbers[3]),
         ))
     } else {
@@ -87,9 +106,9 @@ fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
             ParseState::Rules => {
                 if line.len() == 0 {
                     ParseState::YourTicket
-                } else if let Ok((range1, range2)) = parse_rule(line) {
-                    ranges.push(range1);
-                    ranges.push(range2);
+                } else if let Ok(rule) = parse_rule(line) {
+                    ranges.push(rule.range1);
+                    ranges.push(rule.range2);
                     ParseState::Rules
                 } else {
                     return Err("Failed to parse rule");
@@ -180,7 +199,7 @@ mod tests16 {
     fn test1_parserule() {
         assert_eq!(
             parse_rule("class: 1-3 or 5-7"),
-            Ok((Range::new(1, 3), Range::new(5, 7)))
+            Ok(Rule::new("class", Range::new(1, 3), Range::new(5, 7)))
         );
     }
 
