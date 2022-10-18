@@ -171,7 +171,22 @@ fn solve_part1(input: &str) -> usize {
 }
 
 fn solve_part2(input: &str) -> usize {
-    input.len()
+    let ticket_info = match parse_ticket_info(input) {
+        Ok(ticket_info) => ticket_info,
+        Err(msg) => panic!("Error: {}", msg),
+    };
+
+    ticket_info
+        .your_numbers
+        .iter()
+        .filter(|number| {
+            ticket_info
+                .ranges
+                .iter()
+                .find(|r| r.includes(number))
+                .is_some()
+        })
+        .fold(1, |acc, number| acc * number)
 }
 
 fn main() {
@@ -223,10 +238,22 @@ nearby tickets:
         assert_eq!(solve_part1(EXAMPLE1), 71);
     }
 
-    const EXAMPLE2: &str = "";
+    const EXAMPLE2: &str = "
+class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9
+";
 
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 0);
+        assert_eq!(solve_part2(EXAMPLE2), 12 * 11 * 13);
     }
 }
