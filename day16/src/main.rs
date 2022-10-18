@@ -37,6 +37,10 @@ impl Rule {
             range2,
         }
     }
+
+    fn includes(&self, number: &usize) -> bool {
+        self.range1.includes(number) || self.range2.includes(number)
+    }
 }
 
 #[derive(Debug)]
@@ -49,15 +53,15 @@ enum ParseState {
 
 #[allow(dead_code)]
 struct TicketInfo {
-    ranges: Vec<Range>,
+    rules: Vec<Rule>,
     your_numbers: Vec<usize>,
     nearby_numbers: Vec<usize>,
 }
 
 impl TicketInfo {
-    fn new(ranges: Vec<Range>, your_numbers: Vec<usize>, nearby_numbers: Vec<usize>) -> TicketInfo {
+    fn new(rules: Vec<Rule>, your_numbers: Vec<usize>, nearby_numbers: Vec<usize>) -> TicketInfo {
         TicketInfo {
-            ranges,
+            rules,
             your_numbers,
             nearby_numbers,
         }
@@ -89,7 +93,7 @@ fn parse_rule(line: &str) -> Result<Rule, ()> {
 
 fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
     let mut parse_state = ParseState::Rules;
-    let mut ranges = Vec::<Range>::new();
+    let mut rules = Vec::<Rule>::new();
     let mut your_numbers = Vec::<usize>::new();
     let mut nearby_numbers = Vec::<usize>::new();
     for line in input.lines().skip_while(|l| l.len() == 0) {
@@ -98,8 +102,7 @@ fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
                 if line.len() == 0 {
                     ParseState::YourTicket
                 } else if let Ok(rule) = parse_rule(line) {
-                    ranges.push(rule.range1);
-                    ranges.push(rule.range2);
+                    rules.push(rule);
                     ParseState::Rules
                 } else {
                     return Err("Failed to parse rule");
@@ -139,7 +142,7 @@ fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
         };
         parse_state = next_parse_state
     }
-    Ok(TicketInfo::new(ranges, your_numbers, nearby_numbers))
+    Ok(TicketInfo::new(rules, your_numbers, nearby_numbers))
 }
 
 fn solve_part1(input: &str) -> usize {
@@ -153,7 +156,7 @@ fn solve_part1(input: &str) -> usize {
         .iter()
         .filter(|number| {
             ticket_info
-                .ranges
+                .rules
                 .iter()
                 .find(|r| r.includes(number))
                 .is_none()
@@ -172,7 +175,7 @@ fn solve_part2(input: &str) -> usize {
         .iter()
         .filter(|number| {
             ticket_info
-                .ranges
+                .rules
                 .iter()
                 .find(|r| r.includes(number))
                 .is_some()
