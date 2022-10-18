@@ -24,15 +24,6 @@ impl Range {
         Range { min, max }
     }
 
-    #[allow(dead_code)]
-    fn union(&self, other: &Range) -> Option<Range> {
-        if self.includes(&other.min) || self.includes(&other.max) {
-            Some(Range::new(self.min.min(other.min), self.max.max(other.max)))
-        } else {
-            None
-        }
-    }
-
     fn includes(&self, number: &usize) -> bool {
         self.min <= *number && *number <= self.max
     }
