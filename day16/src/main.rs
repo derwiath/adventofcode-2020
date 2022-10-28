@@ -52,15 +52,15 @@ enum ParseState {
 }
 
 #[allow(dead_code)]
-struct TicketInfo {
+struct TicketInfos {
     rules: Vec<Rule>,
     your_numbers: Vec<usize>,
     nearby_numbers: Vec<usize>,
 }
 
-impl TicketInfo {
-    fn new(rules: Vec<Rule>, your_numbers: Vec<usize>, nearby_numbers: Vec<usize>) -> TicketInfo {
-        TicketInfo {
+impl TicketInfos {
+    fn new(rules: Vec<Rule>, your_numbers: Vec<usize>, nearby_numbers: Vec<usize>) -> TicketInfos {
+        TicketInfos {
             rules,
             your_numbers,
             nearby_numbers,
@@ -91,7 +91,7 @@ fn parse_rule(line: &str) -> Result<Rule, ()> {
     }
 }
 
-fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
+fn parse_ticket_infos(input: &str) -> Result<TicketInfos, &'static str> {
     let mut parse_state = ParseState::Rules;
     let mut rules = Vec::<Rule>::new();
     let mut your_numbers = Vec::<usize>::new();
@@ -142,20 +142,20 @@ fn parse_ticket_info(input: &str) -> Result<TicketInfo, &'static str> {
         };
         parse_state = next_parse_state
     }
-    Ok(TicketInfo::new(rules, your_numbers, nearby_numbers))
+    Ok(TicketInfos::new(rules, your_numbers, nearby_numbers))
 }
 
 fn solve_part1(input: &str) -> usize {
-    let ticket_info = match parse_ticket_info(input) {
-        Ok(ticket_info) => ticket_info,
+    let ticket_infos = match parse_ticket_infos(input) {
+        Ok(ticket_infos) => ticket_infos,
         Err(msg) => panic!("Error: {}", msg),
     };
 
-    ticket_info
+    ticket_infos
         .nearby_numbers
         .iter()
         .filter(|number| {
-            ticket_info
+            ticket_infos
                 .rules
                 .iter()
                 .find(|r| r.includes(number))
@@ -165,16 +165,16 @@ fn solve_part1(input: &str) -> usize {
 }
 
 fn solve_part2(input: &str) -> usize {
-    let ticket_info = match parse_ticket_info(input) {
-        Ok(ticket_info) => ticket_info,
+    let ticket_infos = match parse_ticket_infos(input) {
+        Ok(ticket_infos) => ticket_infos,
         Err(msg) => panic!("Error: {}", msg),
     };
 
-    ticket_info
+    ticket_infos
         .your_numbers
         .iter()
         .filter(|number| {
-            ticket_info
+            ticket_infos
                 .rules
                 .iter()
                 .find(|r| r.includes(number))
