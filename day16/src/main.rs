@@ -196,8 +196,8 @@ fn solve_part1(input: &str) -> usize {
         .fold(0, |acc, invalid_number| acc + invalid_number)
 }
 
-fn get_column_labels<'a>(ticket_infos: &'a TicketInfos) -> Vec<&'a str> {
-    let valid_tickets: Vec<&Ticket> = ticket_infos
+fn get_valid_tickets<'a>(ticket_infos: &'a TicketInfos) -> Vec<&'a Ticket> {
+    ticket_infos
         .nearby_tickets
         .iter()
         .filter(|ticket| ticket.numbers.len() == ticket_infos.rules.len())
@@ -210,7 +210,11 @@ fn get_column_labels<'a>(ticket_infos: &'a TicketInfos) -> Vec<&'a str> {
                     .is_some()
             })
         })
-        .collect();
+        .collect()
+}
+
+fn get_column_labels<'a>(ticket_infos: &'a TicketInfos) -> Vec<&'a str> {
+    let valid_tickets = get_valid_tickets(&ticket_infos);
 
     let mut rules_map: HashMap<usize, Vec<&Rule>> = HashMap::new();
     for column in 0..ticket_infos.rules.len() {
