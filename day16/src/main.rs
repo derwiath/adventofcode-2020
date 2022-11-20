@@ -2,7 +2,9 @@
 extern crate lazy_static;
 extern crate regex;
 
+use std::collections::{BTreeMap, HashMap};
 use std::env;
+use std::fmt;
 use std::fs;
 
 // Inclusive range
@@ -12,7 +14,7 @@ struct Range {
     max: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 struct Rule {
     label: String,
     range1: Range,
@@ -43,6 +45,12 @@ impl Rule {
     }
 }
 
+impl fmt::Debug for Rule {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Rule ").field("label", &self.label).finish()
+    }
+}
+
 #[derive(Debug)]
 enum ParseState {
     Rules,
@@ -51,19 +59,29 @@ enum ParseState {
     Eof,
 }
 
+struct Ticket {
+    numbers: Vec<usize>,
+}
+
+impl Ticket {
+    fn new(numbers: Vec<usize>) -> Ticket {
+        Ticket { numbers }
+    }
+}
+
 #[allow(dead_code)]
 struct TicketInfos {
     rules: Vec<Rule>,
-    your_numbers: Vec<usize>,
-    nearby_numbers: Vec<usize>,
+    your_ticket: Ticket,
+    nearby_tickets: Vec<Ticket>,
 }
 
 impl TicketInfos {
-    fn new(rules: Vec<Rule>, your_numbers: Vec<usize>, nearby_numbers: Vec<usize>) -> TicketInfos {
+    fn new(rules: Vec<Rule>, your_ticket: Ticket, nearby_tickets: Vec<Ticket>) -> TicketInfos {
         TicketInfos {
             rules,
-            your_numbers,
-            nearby_numbers,
+            your_ticket,
+            nearby_tickets,
         }
     }
 }
@@ -94,8 +112,8 @@ fn parse_rule(line: &str) -> Result<Rule, ()> {
 fn parse_ticket_infos(input: &str) -> Result<TicketInfos, &'static str> {
     let mut parse_state = ParseState::Rules;
     let mut rules = Vec::<Rule>::new();
-    let mut your_numbers = Vec::<usize>::new();
-    let mut nearby_numbers = Vec::<usize>::new();
+    let mut your_ticket: Option<Ticket> = None;
+    let mut nearby_tickets = Vec::<Ticket>::new();
     for line in input.lines().skip_while(|l| l.len() == 0) {
         let next_parse_state: ParseState = match parse_state {
             ParseState::Rules => {
@@ -114,9 +132,12 @@ fn parse_ticket_infos(input: &str) -> Result<TicketInfos, &'static str> {
                 } else if line.len() == 0 {
                     ParseState::NearbyTickets
                 } else {
-                    line.split(',')
+                    let numbers: Vec<usize> = line
+                        .split(',')
                         .map(|s| s.parse::<usize>().unwrap())
-                        .for_each(|n| your_numbers.push(n));
+                        .collect();
+                    assert_eq!(your_ticket.is_none(), true);
+                    your_ticket = Some(Ticket::new(numbers));
                     ParseState::NearbyTickets
                 }
             }
@@ -124,15 +145,17 @@ fn parse_ticket_infos(input: &str) -> Result<TicketInfos, &'static str> {
                 if line == "nearby tickets:" {
                     ParseState::NearbyTickets
                 } else if line.len() == 0 {
-                    if nearby_numbers.len() > 0 {
+                    if nearby_tickets.len() > 0 {
                         ParseState::Eof
                     } else {
                         ParseState::NearbyTickets
                     }
                 } else {
-                    line.split(',')
-                        .map(|s| (s.parse::<usize>().unwrap()))
-                        .for_each(|n| nearby_numbers.push(n));
+                    let numbers: Vec<usize> = line
+                        .split(',')
+                        .map(|s| s.parse::<usize>().unwrap())
+                        .collect();
+                    nearby_tickets.push(Ticket::new(numbers));
                     ParseState::NearbyTickets
                 }
             }
@@ -142,7 +165,15 @@ fn parse_ticket_infos(input: &str) -> Result<TicketInfos, &'static str> {
         };
         parse_state = next_parse_state
     }
-    Ok(TicketInfos::new(rules, your_numbers, nearby_numbers))
+    if your_ticket.is_some() {
+        Ok(TicketInfos::new(
+            rules,
+            your_ticket.unwrap(),
+            nearby_tickets,
+        ))
+    } else {
+        Err("your ticket not found")
+    }
 }
 
 fn solve_part1(input: &str) -> usize {
@@ -152,8 +183,9 @@ fn solve_part1(input: &str) -> usize {
     };
 
     ticket_infos
-        .nearby_numbers
+        .nearby_tickets
         .iter()
+        .flat_map(|nearby_ticket| &nearby_ticket.numbers)
         .filter(|number| {
             ticket_infos
                 .rules
@@ -164,23 +196,100 @@ fn solve_part1(input: &str) -> usize {
         .fold(0, |acc, invalid_number| acc + invalid_number)
 }
 
+fn get_column_labels<'a>(ticket_infos: &'a TicketInfos) -> Vec<&'a str> {
+    let valid_tickets: Vec<&Ticket> = ticket_infos
+        .nearby_tickets
+        .iter()
+        .filter(|ticket| ticket.numbers.len() == ticket_infos.rules.len())
+        .filter(|ticket| {
+            ticket.numbers.iter().all(|number| {
+                ticket_infos
+                    .rules
+                    .iter()
+                    .find(|r| r.includes(number))
+                    .is_some()
+            })
+        })
+        .collect();
+
+    let mut rules_map: HashMap<usize, Vec<&Rule>> = HashMap::new();
+    for column in 0..ticket_infos.rules.len() {
+        let rules: Vec<&Rule> = ticket_infos
+            .rules
+            .iter()
+            .filter(|r| valid_tickets.iter().all(|t| r.includes(&t.numbers[column])))
+            .collect();
+        rules_map.insert(column, rules);
+    }
+
+    rules_map
+        .iter()
+        .for_each(|(column, rules)| println!("{} {:?}", column, rules));
+
+    let mut single_rules_map: BTreeMap<usize, &Rule> = BTreeMap::new();
+    loop {
+        let single_rule_tickets: Vec<(usize, &Rule)> = rules_map
+            .iter()
+            .filter(|(_, rules)| rules.len() == 1)
+            .map(|(column, rules)| (column.clone(), rules[0]))
+            .collect();
+        if single_rule_tickets.len() == 0 {
+            break;
+        }
+        single_rule_tickets.iter().for_each(|(column, _)| {
+            rules_map.remove(column);
+        });
+        single_rule_tickets.iter().for_each(|(column, taken_rule)| {
+            let mut new_rules_map: HashMap<usize, Vec<&Rule>> = HashMap::new();
+            for (column, rules) in &rules_map {
+                new_rules_map.insert(
+                    *column,
+                    rules
+                        .iter()
+                        .filter(|r| r != &taken_rule)
+                        .map(|r| *r)
+                        .collect(),
+                );
+            }
+            rules_map = new_rules_map;
+
+            single_rules_map.insert(*column, *taken_rule);
+        });
+    }
+
+    single_rules_map
+        .iter()
+        .map(|(_, rule)| rule.label.as_str())
+        .collect()
+}
+
 fn solve_part2(input: &str) -> usize {
     let ticket_infos = match parse_ticket_infos(input) {
         Ok(ticket_infos) => ticket_infos,
         Err(msg) => panic!("Error: {}", msg),
     };
 
-    ticket_infos
-        .your_numbers
+    let column_labels = get_column_labels(&ticket_infos);
+
+    let departure_columns: Vec<usize> = column_labels
         .iter()
-        .filter(|number| {
-            ticket_infos
-                .rules
-                .iter()
-                .find(|r| r.includes(number))
-                .is_some()
+        .enumerate()
+        .filter_map(|(column, label)| {
+            if label.starts_with("departure") {
+                Some(column)
+            } else {
+                None
+            }
         })
-        .fold(1, |acc, number| acc * number)
+        .collect();
+
+    ticket_infos
+        .your_ticket
+        .numbers
+        .iter()
+        .enumerate()
+        .filter(|(column, _)| departure_columns.iter().find(|x| *x == column).is_some())
+        .fold(1, |acc, (_, value)| acc * value)
 }
 
 fn main() {
@@ -248,6 +357,10 @@ nearby tickets:
 
     #[test]
     fn test2_1() {
-        assert_eq!(solve_part2(EXAMPLE2), 12 * 11 * 13);
+        let ticket_infos = parse_ticket_infos(EXAMPLE2).expect("Failed to parse ticket infos");
+        assert_eq!(
+            get_column_labels(&ticket_infos),
+            vec!["row", "class", "seat"]
+        );
     }
 }
