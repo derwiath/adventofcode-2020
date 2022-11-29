@@ -5,6 +5,32 @@ extern crate regex;
 use std::env;
 use std::fs;
 
+struct Point(usize, usize, usize);
+struct GridSize(usize, usize, usize);
+
+struct Grid<T> {
+    values: Vec<T>,
+    size: GridSize,
+    slice_size: usize,
+}
+
+impl<T> Grid<T> {
+    fn with_size(size: GridSize) -> Grid<T> {
+        let slice_size = size.0 * size.1;
+        let values = Vec::with_capacity(slice_size * size.2);
+        Grid {
+            values,
+            size,
+            slice_size,
+        }
+    }
+
+    fn get(&self, p: &Point) -> Option<&T> {
+        let index = p.0 + p.1 * self.size.0 + p.2 * self.slice_size;
+        self.values.get(index)
+    }
+}
+
 fn solve_part1(input: &str) -> usize {
     lazy_static! {
         static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
@@ -20,6 +46,14 @@ fn solve_part1(input: &str) -> usize {
         }
     }
     sum
+    /*
+     * 8x8x1
+     * 10x10x3
+     * 8 + 2 * 6 = 20
+     * 1 + 2 * 6 = 13
+     *
+     *
+     */
 }
 
 fn solve_part2(input: &str) -> usize {
