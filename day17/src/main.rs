@@ -31,6 +31,27 @@ impl<T> Grid<T> {
     }
 }
 
+fn parse_line(line: &str) -> Vec<bool> {
+    line.chars()
+        .map(|c| {
+            assert!(c == '#' || c == '.');
+            c == '#'
+        })
+        .collect()
+}
+
+fn parse_grid(input: &str) -> Option<Grid<bool>> {
+    let line_values: Vec<Vec<bool>> = input.lines().map(|l| parse_line(l)).collect();
+    assert!(line_values.len() > 0);
+    let grid_side_len = line_values.len();
+    for l in &line_values {
+        assert!(l.len() == grid_side_len);
+    }
+
+    let grid_size = GridSize(grid_side_len, grid_side_len, 1);
+    let mut grid = Grid::<bool>::with_size(grid_size);
+}
+
 fn solve_part1(input: &str) -> usize {
     lazy_static! {
         static ref RE: regex::Regex = regex::Regex::new(r"(\d*) ([a-z]*)").unwrap();
